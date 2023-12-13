@@ -1,0 +1,81 @@
+1.db.tasks.find({ SubmittedDate: {$gte: ISODate('2020-10-01'), $lt: ISODate('2020-10-31') } }).toArray();
+db.topics.find({
+  Date: {
+    $gte: ISODate("2020-10-01"),
+    $lte: ISODate("2020-10-31")
+  }
+}).toArray();
+
+2.db.company_drives.find({
+  InDate: {
+    $gte: ISODate("2020-10-15"),
+    $lte: ISODate("2020-10-31")
+  }
+}).toArray();
+
+3.db.company_drives.aggregate([
+  {
+    $lookup: {
+      from: "users",
+      localField: "username",
+      foreignField: "username",
+      as: "students"
+    }
+  }
+]).toArray();
+
+4.db.codekata.aggregate([
+  {
+    $group: {
+      _id: "$username",
+      total_problems_solved: { $sum: "$solved_problems" }
+    }
+  }
+]).toArray();
+
+5.db.mentors.find({
+  count: { $gt: 15 }
+}).toArray();
+
+6 db.users.aggregate([
+  {
+    $lookup: {
+      from: "attendance",
+      localField: "username",
+      foreignField: "username",
+      as: "attendanceInfo"
+    }
+  },
+  {
+    $lookup: {
+      from: "tasks",
+      localField: "username",
+      foreignField: "username",
+      as: "taskInfo"
+    }
+  },
+  {
+    $match: {
+      $or: [
+        {
+          "attendanceInfo": { $elemMatch: { Date: { $gte: ISODate("2020-10-15"), $lte: ISODate("2020-10-31") }, Status: "absent" } }
+        },
+        {
+          "taskInfo": { $not: { $elemMatch: { SubmittedDate: { $gte: ISODate("2020-10-15"), $lte: ISODate("2020-10-31") } } } }
+        }
+      ]
+    }
+  },
+  {
+    $group: {
+      _id: null,
+      count: { $sum: 1 }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      count: 1
+    }
+  }
+]).toArray();
